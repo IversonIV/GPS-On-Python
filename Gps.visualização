@@ -1,0 +1,93 @@
+importe  matplotlib . pyplot  como  plt
+from  PIL  import  Image , ImageDraw
+
+
+classe  GPSVis ( objeto ):
+    """
+        Classe para visualização de dados GPS usando mapa OSM pré-baixado em formato de imagem.
+    """
+    def  __init__ ( self , data_path , map_path , pontos ):
+        """
+        :param data_path: Caminho para arquivo contendo registros GPS.
+        :param map_path: Caminho para o mapa OSM pré-baixado em formato de imagem.
+        :param points: pontos GPS superior esquerdo e inferior direito do mapa (lat1, lon1, lat2, lon2).
+        """
+        próprio . data_path  =  data_path
+        próprio . pontos  =  pontos
+        próprio . map_path  =  map_path
+
+        próprio . imagem_resultado  =  Imagem
+        próprio . x_ticks  = []
+        próprio . y_ticks  = []
+
+    def  plot_map ( self , output = 'save' , save_as = 'resultMap.png' ):
+        """
+        Método para plotar o mapa. Você pode optar por salvá-lo em arquivo ou plotá-lo.
+        :param output: Digite 'plot' para mostrar o mapa ou 'save' para salvá-lo.
+        :param save_as: Nome e tipo da imagem resultante.
+        :Retorna:
+        """
+        próprio . get_ticks ()
+        fig , eixo1  =  plt . subtramas ( figsize = ( 10 , 10 ))
+        eixo1 . imshow ( self . result_image )
+        eixo1 . set_xlabel ( 'Longitude' )
+        eixo1 . set_ylabel ( 'Latitude' )
+        eixo1 . set_xticklabels ( self . x_ticks )
+        eixo1 . set_yticklabels ( self . y_ticks )
+        eixo1 . grade ()
+        if  output  ==  'salvar' :
+            pl . savefig ( save_as )
+        mais :
+            pl . mostrar ()
+
+    def  create_image ( self , color , width = 2 ):
+        """
+        Crie a imagem que contém o mapa original e os registros GPS.
+        :param color: Cor dos registros GPS.
+        :param largura: largura dos registros GPS desenhados.
+        :Retorna:
+        """
+        dados  =  pd . read_csv ( self . data_path , nomes = [ 'LATITUDE' , 'LONGITUDE' ], sep = ',' )
+
+        próprio . imagem_resultado  =  Imagem . open ( self . map_path , 'r' )
+        pontos_img  = []
+        gps_data  =  tupla ( zip ( dados [ 'LATITUDE' ]. values ​​, data [ 'LONGITUDE' ]. values ​​))
+        para  d  em  gps_data :
+            x1 , y1  =  próprio . scale_to_img ( d , ( self . result_image . size [ 0 ], self . result_image . size [ 1 ])))
+            img_points . anexar (( x1 , y1 ))
+        desenhar  =  ImageDraw . Draw ( self . result_image )
+        desenhar . linha ( img_points , preenchimento = cor , largura = largura )
+
+    def  scale_to_img ( self , lat_lon , h_w ):
+        """
+        Conversão de latitude e longitude para os pixels da imagem.
+        Ele é usado para desenhar os registros de GPS na imagem do mapa.
+        :param lat_lon: registro GPS para desenhar (lat1, lon1).
+        :param h_w: Tamanho da imagem do mapa (w, h).
+        :return: Tupla contendo as coordenadas xey para desenhar na imagem do mapa.
+        """
+        # https://gamedev.stackexchange.com/questions/33441/how-to-convert-a-number-from-one-min-max-set-to-another-min-max-set/33445
+        old  = ( self . points [ 2 ], self . points [ 0 ])
+        novo  = ( 0 , h_w [ 1 ])
+        y  = (( lat_lon [ 0 ] -  antigo [ 0 ]) * ( novo [ 1 ] -  novo [ 0 ]) / ( antigo [ 1 ] -  antigo [ 0 ])) +  novo [ 0 ]
+        old  = ( self . points [ 1 ], self . points [ 3 ])
+        novo  = ( 0 , h_w [ 0 ])
+        x  = (( lat_lon [ 1 ] -  antigo [ 0 ]) * ( novo [ 1 ] -  novo [ 0 ]) / ( antigo [ 1 ] -  antigo [ 0 ])) +  novo [ 0 ]
+        # y deve ser invertido porque a orientação da imagem no matplotlib.
+        # imagem - (0, 0) no canto superior esquerdo; sistema de coordenadas - (0, 0) no canto inferior esquerdo
+        return  int ( x ), h_w [ 1 ] -  int ( y )
+
+    def  get_ticks ( self ):
+        """
+        Gera ticks personalizados com base nas coordenadas GPS do mapa para a saída do matplotlib.
+        :Retorna:
+        """
+        próprio . x_ticks  =  mapa (
+            lambda  x : redondo ( x , 4 ),
+            np . linspace ( self . points [ 1 ], self . points [ 3 ], num = 7 ))
+        y_ticks  =  mapa (
+            lambda  x : redondo ( x , 4 ),
+            np . linspace ( self . points [ 2 ], self . points [ 0 ], num = 8 ))
+        # Os ticks devem ser invertidos porque a orientação da imagem no matplotlib.
+        # imagem - (0, 0) no canto superior esquerdo; sistema de coordenadas - (0, 0) no canto inferior esquerdo
+        próprio . y_ticks  =  ordenado ( y_ticks , reverse = True )
